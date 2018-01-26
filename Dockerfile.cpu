@@ -1,17 +1,26 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
-MAINTAINER Sai Soundararaj <saip@outlook.com>
+LABEL maintainer="Sai Soundararaj <saip@outlook.com>"
+LABEL modifier="Han Chen <han.chen@citrix.com>"
 
-ARG THEANO_VERSION=rel-0.8.2
-ARG TENSORFLOW_VERSION=0.12.1 
-ARG TENSORFLOW_ARCH=cpu
-ARG KERAS_VERSION=1.2.0
+ARG THEANO_VERSION=rel-1.0.1
+#ARG TENSORFLOW_VERSION=1.4.1
+#ARG TENSORFLOW_ARCH=cpu
+ARG KERAS_VERSION=2.1.3
 ARG LASAGNE_VERSION=v0.1
 ARG TORCH_VERSION=latest
 ARG CAFFE_VERSION=master
 
+
 # Install some dependencies
+
+RUN apt-get update && \
+    apt-get install -y software-properties-common python-software-properties && \
+    add-apt-repository ppa:webupd8team/java
+
 RUN apt-get update && apt-get install -y \
+		openjdk-8-jre \
+		openjdk-8-jdk \
 		bc \
 		build-essential \
 		cmake \
@@ -26,7 +35,7 @@ RUN apt-get update && apt-get install -y \
 		liblcms2-dev \
 		libopenblas-dev \
 		liblapack-dev \
-		libopenjpeg2 \
+		libopenjpeg5 \
 		libpng12-dev \
 		libssl-dev \
 		libtiff5-dev \
@@ -72,7 +81,6 @@ RUN apt-get update && apt-get install -y \
 		python3-tk \
 		python3-numpy \
 		ant \
-		default-jdk \
 		doxygen \
 		&& \
 	apt-get clean && \
@@ -127,8 +135,7 @@ RUN pip --no-cache-dir install --upgrade ipython && \
 
 
 # Install TensorFlow
-RUN pip --no-cache-dir install \
-	https://storage.googleapis.com/tensorflow/linux/${TENSORFLOW_ARCH}/tensorflow-${TENSORFLOW_VERSION}-cp27-none-linux_x86_64.whl
+RUN pip install tensorflow
 
 
 # Install dependencies for Caffe
@@ -184,10 +191,12 @@ RUN pip --no-cache-dir install git+git://github.com/fchollet/keras.git@${KERAS_V
 # Install Lasagne
 RUN pip --no-cache-dir install git+git://github.com/Lasagne/Lasagne.git@${LASAGNE_VERSION}
 
+# Install sudo which is not by default included in Ubuntu 16.04
+RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
 
 # Install Torch
-RUN git clone https://github.com/torch/distro.git /root/torch --recursive && \
-	cd /root/torch && \
+RUN git clone https://github.com/torch/distro.git ~/torch --recursive && \
+	cd ~/torch && \
 	bash install-deps && \
 	yes no | ./install.sh
 
@@ -229,4 +238,4 @@ COPY run_jupyter.sh /root/
 EXPOSE 6006 8888
 
 WORKDIR "/root"
-CMD ["/bin/bash"]
+CMD export PASSWORD=MY_PASSWORD && jupyter notebook --allow-root
