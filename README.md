@@ -37,7 +37,7 @@ Docker Hub is a cloud based repository of pre-built images. You can download the
 
 **CPU Version**
 ```bash
-docker pull floydhub/dl-docker:cpu
+docker pull hank2018/dl-docker
 ```
 
 **GPU Version**
@@ -67,7 +67,7 @@ Once we've built the image, we have all the frameworks we need installed in it. 
 
 **CPU Version**
 ```bash
-docker run -it -p 8888:8888 -p 6006:6006 -v /sharedfolder:/root/sharedfolder floydhub/dl-docker:cpu bash
+docker run --restart unless-stopped -it -d --name dl-server -p 8888:8888 -p 6006:6006 -v /sharedfolder:/root/sharedfolder hank2018/dl-docker:latest
 ```
 	
 **GPU Version**
@@ -81,7 +81,7 @@ Note the use of `nvidia-docker` rather than just `docker`
 |`-it`             | This creates an interactive terminal you can use to iteract with your container |
 |`-p 8888:8888 -p 6006:6006`    | This exposes the ports inside the container so they can be accessed from the host. The format is `-p <host-port>:<container-port>`. The default iPython Notebook runs on port 8888 and Tensorboard on 6006 |
 |`-v /sharedfolder:/root/sharedfolder/` | This shares the folder `/sharedfolder` on your host machine to `/root/sharedfolder/` inside your container. Any data written to this folder by the container will be persistent. You can modify this to anything of the format `-v /local/shared/folder:/shared/folder/in/container/`. See [Docker container persistence](#docker-container-persistence)
-|`floydhub/dl-docker:cpu`   | This the image that you want to run. The format is `image:tag`. In our case, we use the image `dl-docker` and tag `gpu` or `cpu` to spin up the appropriate image |
+|`hank2018/dl-docker:latest`   | This the image that you want to run. The format is `image:tag`. In our case, we use the image `dl-docker` and tag `gpu` or `cpu` to spin up the appropriate image |
 |`bash`       | This provides the default command when the container is started. Even if this was not provided, bash is the default command and just starts a Bash session. You can modify this to be whatever you'd like to be executed when your container starts. For example, you can execute `docker run -it -p 8888:8888 -p 6006:6006 floydhub/dl-docker:cpu jupyter notebook`. This will execute the command `jupyter notebook` and starts your Jupyter Notebook for you when the container starts
 
 ## Some common scenarios
