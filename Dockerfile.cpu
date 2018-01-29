@@ -89,13 +89,18 @@ RUN apt-get update && apt-get install -y \
 # Link BLAS library to use OpenBLAS using the alternatives mechanism (https://www.scipy.org/scipylib/building/linux.html#debian-ubuntu)
 	update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libblas.so.3
 
-# Install pip
+# Install pip and pip3
 RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
 	python get-pip.py && \
 	rm get-pip.py
 
+# Install sudo which is not by default included in Ubuntu 16.04
+RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install python3-pip -y
+
 # Add SNI support to Python
-RUN pip --no-cache-dir install \
+RUN pip3 --no-cache-dir install \
 		pyopenssl \
 		ndg-httpsclient \
 		pyasn1
@@ -117,9 +122,9 @@ RUN apt-get update && apt-get install -y \
 	apt-get autoremove && \
 	rm -rf /var/lib/apt/lists/*
 
-# Install other useful Python packages using pip
-RUN pip --no-cache-dir install --upgrade ipython && \
-	pip --no-cache-dir install \
+# Install other useful Python packages using pip 3
+RUN pip3 --no-cache-dir install --upgrade ipython && \
+	pip3 --no-cache-dir install \
 		Cython \
 		ipykernel \
 		jupyter \
@@ -133,9 +138,12 @@ RUN pip --no-cache-dir install --upgrade ipython && \
 		&& \
 	python -m ipykernel.kernelspec
 
+# Set Default Jupyter kernel to Python 3
+RUN python3 -m pip install ipykernel
+RUN python3 -m ipykernel install --user
 
 # Install TensorFlow
-RUN pip install tensorflow
+RUN pip3 install tensorflow
 
 
 # Install dependencies for Caffe
@@ -158,7 +166,7 @@ RUN apt-get update && apt-get install -y \
 # Install Caffe
 RUN git clone -b ${CAFFE_VERSION} --depth 1 https://github.com/BVLC/caffe.git /root/caffe && \
 	cd /root/caffe && \
-	cat python/requirements.txt | xargs -n1 pip install && \
+	cat python/requirements.txt | xargs -n1 pip3 install && \
 	mkdir build && cd build && \
 	cmake -DCPU_ONLY=1 -DBLAS=Open .. && \
 	make -j"$(nproc)" all && \
@@ -174,7 +182,7 @@ RUN echo "$CAFFE_ROOT/build/lib" >> /etc/ld.so.conf.d/caffe.conf && ldconfig
 
 
 # Install Theano and set up Theano config (.theanorc) OpenBLAS
-RUN pip --no-cache-dir install git+git://github.com/Theano/Theano.git@${THEANO_VERSION} && \
+RUN pip3 --no-cache-dir install git+git://github.com/Theano/Theano.git@${THEANO_VERSION} && \
 	\
 	echo "[global]\ndevice=cpu\nfloatX=float32\nmode=FAST_RUN \
 		\n[lib]\ncnmem=0.95 \
@@ -185,14 +193,11 @@ RUN pip --no-cache-dir install git+git://github.com/Theano/Theano.git@${THEANO_V
 
 
 # Install Keras
-RUN pip --no-cache-dir install git+git://github.com/fchollet/keras.git@${KERAS_VERSION}
+RUN pip3 --no-cache-dir install git+git://github.com/fchollet/keras.git@${KERAS_VERSION}
 
 
 # Install Lasagne
-RUN pip --no-cache-dir install git+git://github.com/Lasagne/Lasagne.git@${LASAGNE_VERSION}
-
-# Install sudo which is not by default included in Ubuntu 16.04
-RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
+RUN pip3 --no-cache-dir install git+git://github.com/Lasagne/Lasagne.git@${LASAGNE_VERSION}
 
 # Install Torch
 RUN git clone https://github.com/torch/distro.git ~/torch --recursive && \
@@ -227,6 +232,12 @@ RUN git clone --depth 1 https://github.com/opencv/opencv.git /root/opencv && \
 	ldconfig && \
 	echo 'ln /dev/null /dev/raw1394' >> ~/.bashrc
 
+# Patch: upgrade tensorflow to latest version
+RUN pip3 install --upgrade tensorflow
+RUN pip3 install pydotplus
+RUN pip3 install graphviz
+RUN pip3 install sklearn
+
 
 # Set up notebook config
 COPY jupyter_notebook_config.py /root/.jupyter/
@@ -238,4 +249,4 @@ COPY run_jupyter.sh /root/
 EXPOSE 6006 8888
 
 WORKDIR "/root"
-CMD export PASSWORD=MY_PASSWORD && jupyter notebook --allow-root
+CMD export PASSWORD=Citrix123 && jupyter notebook --allow-root
