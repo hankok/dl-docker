@@ -205,9 +205,9 @@ ENV CAFFE_ROOT=/root/caffe
 # https://github.com/docker/hub-feedback/issues/460
 ENV CLONE_TAG=1.0
 
-RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git . && \
-    pip install --upgrade pip && \
-    cd python && for req in $(cat requirements.txt) pydot; do pip install $req; done && cd .. && \
+RUN cd /root && git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git && \
+    pip3 install --upgrade pip && \
+    cd caffe/python && for req in $(cat requirements.txt) pydot; do pip install $req; done && cd .. && \
     mkdir build && cd build && \
     cmake -DCPU_ONLY=1 .. && \
     make -j"$(nproc)"
@@ -226,7 +226,7 @@ RUN luarocks install nn && \
 	luarocks make
 
 # Install OpenCV
-RUN sudo apt install python3-opencv
+RUN pip3 install opencv-python
 
 # Patch: upgrade tensorflow to latest version
 RUN pip3 install --upgrade tensorflow
