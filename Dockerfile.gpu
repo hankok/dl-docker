@@ -139,48 +139,6 @@ RUN pip3 --no-cache-dir install --upgrade ipython && \
 # Install TensorFlow for GPU
 RUN pip3 install tensorflow-gpu && pip3 install --upgrade tensorflow-gpu
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        git \
-        wget \
-        libatlas-base-dev \
-        libboost-all-dev \
-        libgflags-dev \
-        libgoogle-glog-dev \
-        libhdf5-serial-dev \
-        libleveldb-dev \
-        liblmdb-dev \
-        libopencv-dev \
-        libprotobuf-dev \
-        libsnappy-dev \
-        protobuf-compiler \
-        python-dev \
-        python-numpy \
-        python-pip \
-        python-setuptools \
-        python-scipy && \
-    rm -rf /var/lib/apt/lists/*
-
-ENV CAFFE_ROOT=/root/caffe
-WORKDIR $CAFFE_ROOT
-
-# FIXME: use ARG instead of ENV once DockerHub supports this
-# https://github.com/docker/hub-feedback/issues/460
-ENV CLONE_TAG=1.0
-
-RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git . && \
-    pip install --upgrade pip && \
-    cd python && for req in $(cat requirements.txt) pydot; do pip install $req; done && cd .. && \
-    git clone https://github.com/NVIDIA/nccl.git && cd nccl && make -j install && cd .. && rm -rf nccl && \
-    mkdir build && cd build && \
-    cmake -DUSE_CUDNN=1 -DUSE_NCCL=1 .. && \
-    make -j"$(nproc)"
-
-ENV PYCAFFE_ROOT $CAFFE_ROOT/python
-ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
-ENV PATH $CAFFE_ROOT/build/tools:$PYCAFFE_ROOT:$PATH
-RUN echo "$CAFFE_ROOT/build/lib" >> /etc/ld.so.conf.d/caffe.conf && ldconfig
 
 # Install Theano and set up Theano config (.theanorc) for CUDA and OpenBLAS
 RUN pip3 --no-cache-dir install git+git://github.com/Theano/Theano.git@${THEANO_VERSION} && \
@@ -216,6 +174,49 @@ ENV LUA_PATH='/root/.luarocks/share/lua/5.1/?.lua;/root/.luarocks/share/lua/5.1/
 	DYLD_LIBRARY_PATH=/root/torch/install/lib:$DYLD_LIBRARY_PATH
 ENV LUA_CPATH='/root/torch/install/lib/?.so;'$LUA_CPATH
 
+# Install Caffe
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        wget \
+        libatlas-base-dev \
+        libboost-all-dev \
+        libgflags-dev \
+        libgoogle-glog-dev \
+        libhdf5-serial-dev \
+        libleveldb-dev \
+        liblmdb-dev \
+        libopencv-dev \
+        libprotobuf-dev \
+        libsnappy-dev \
+        protobuf-compiler \
+        python-dev \
+        python-numpy \
+        python-pip \
+        python-setuptools \
+        python-scipy && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV CAFFE_ROOT=/root/caffe
+
+# FIXME: use ARG instead of ENV once DockerHub supports this
+# https://github.com/docker/hub-feedback/issues/460
+ENV CLONE_TAG=1.0
+
+RUN cd /root && git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git && \
+    pip3 install --upgrade pip && \
+    cd caffe/python && for req in $(cat requirements.txt) pydot; do pip install $req; done && cd .. && \
+    git clone https://github.com/NVIDIA/nccl.git && cd nccl && make -j install && cd .. && rm -rf nccl && \
+    mkdir build && cd build && \
+    cmake -DUSE_CUDNN=1 -DUSE_NCCL=1 .. && \
+    make -j"$(nproc)"
+
+ENV PYCAFFE_ROOT $CAFFE_ROOT/python
+ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
+ENV PATH $CAFFE_ROOT/build/tools:$PYCAFFE_ROOT:$PATH
+RUN echo "$CAFFE_ROOT/build/lib" >> /etc/ld.so.conf.d/caffe.conf && ldconfig
+
 # Install the latest versions of nn, cutorch, cunn, cuDNN bindings and iTorch
 RUN luarocks install nn && \
 	luarocks install cutorch && \
@@ -243,7 +244,6 @@ RUN git clone --depth 1 https://github.com/opencv/opencv.git /root/opencv && \
 
 # Patches for a "SyntaxError: invalid syntax" issue of python3 "l.append("%s=%s" % (attr, `value`))"
 RUN pip3 install python-dateutil --upgrade
-
 
 # Set up notebook config
 COPY jupyter_notebook_config.py /root/.jupyter/
