@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:17.10
 
 LABEL maintainer="Sai Soundararaj <saip@outlook.com>"
 LABEL modifier="Han Chen <han.chen@citrix.com>"
@@ -32,8 +32,8 @@ RUN apt-get update && apt-get install -y \
 		liblcms2-dev \
 		libopenblas-dev \
 		liblapack-dev \
-		libopenjpeg5 \
-		libpng12-dev \
+		#libopenjpeg2 \
+		#libpng12-dev \
 		libssl-dev \
 		libtiff5-dev \
 		libwebp-dev \
@@ -53,7 +53,7 @@ RUN apt-get update && apt-get install -y \
 		libwebp-dev \
 		libpng-dev \
 		libtiff5-dev \
-		libjasper-dev \
+		#libjasper-dev \
 		libopenexr-dev \
 		libgdal-dev \
 		libdc1394-22-dev \
@@ -159,21 +159,15 @@ RUN apt-get update && apt-get install -y \
 	rm -rf /var/lib/apt/lists/*
 
 # Install Caffe
-RUN git clone -b ${CAFFE_VERSION} --depth 1 https://github.com/BVLC/caffe.git /root/caffe && \
-	cd /root/caffe && \
-	cat python/requirements.txt | xargs -n1 pip3 install && \
-	mkdir build && cd build && \
-	cmake -DCPU_ONLY=1 -DBLAS=Open .. && \
-	make -j"$(nproc)" all && \
-	make install
+RUN sudo apt install caffe-cpu
 
 # Set up Caffe environment variables
-ENV CAFFE_ROOT=/root/caffe
-ENV PYCAFFE_ROOT=$CAFFE_ROOT/python
-ENV PYTHONPATH=$PYCAFFE_ROOT:$PYTHONPATH \
-	PATH=$CAFFE_ROOT/build/tools:$PYCAFFE_ROOT:$PATH
+#ENV CAFFE_ROOT=/root/caffe
+#ENV PYCAFFE_ROOT=$CAFFE_ROOT/python
+#ENV PYTHONPATH=$PYCAFFE_ROOT:$PYTHONPATH \
+#	PATH=$CAFFE_ROOT/build/tools:$PYCAFFE_ROOT:$PATH
 
-RUN echo "$CAFFE_ROOT/build/lib" >> /etc/ld.so.conf.d/caffe.conf && ldconfig
+#RUN echo "$CAFFE_ROOT/build/lib" >> /etc/ld.so.conf.d/caffe.conf && ldconfig
 
 
 # Install Theano and set up Theano config (.theanorc) OpenBLAS
