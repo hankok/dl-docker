@@ -4,10 +4,7 @@ LABEL maintainer="Sai Soundararaj <saip@outlook.com>"
 LABEL modifier="Han Chen <han.chen@citrix.com>"
 
 ARG THEANO_VERSION=rel-1.0.1
-#ARG TENSORFLOW_VERSION=1.4.1
-#ARG TENSORFLOW_ARCH=cpu
 ARG KERAS_VERSION=2.1.3
-ARG LASAGNE_VERSION=v0.1
 ARG TORCH_VERSION=latest
 ARG CAFFE_VERSION=master
 
@@ -74,7 +71,6 @@ RUN apt-get update && apt-get install -y \
 		libxine2-dev \
 		libtbb-dev \
 		libeigen3-dev \
-		python-dev \
 		python-tk \
 		python-numpy \
 		python3-dev \
@@ -108,21 +104,21 @@ RUN pip3 --no-cache-dir install \
 # Install useful Python packages using apt-get to avoid version incompatibilities with Tensorflow binary
 # especially numpy, scipy, skimage and sklearn (see https://github.com/tensorflow/tensorflow/issues/2034)
 RUN apt-get update && apt-get install -y \
-		python-numpy \
-		python-scipy \
-		python-nose \
-		python-h5py \
-		python-skimage \
-		python-matplotlib \
-		python-pandas \
-		python-sklearn \
-		python-sympy \
+		python3-numpy \
+		python3-scipy \
+		python3-nose \
+		python3-h5py \
+		python3-skimage \
+		python3-matplotlib \
+		python3-pandas \
+		python3-sklearn \
+		python3-sympy \
 		&& \
 	apt-get clean && \
 	apt-get autoremove && \
 	rm -rf /var/lib/apt/lists/*
 
-# Install other useful Python packages using pip 3
+# Install other useful Python packages using pip3
 RUN pip3 --no-cache-dir install --upgrade ipython && \
 	pip3 --no-cache-dir install \
 		Cython \
@@ -136,7 +132,7 @@ RUN pip3 --no-cache-dir install --upgrade ipython && \
 		wheel \
 		zmq \
 		&& \
-	python -m ipykernel.kernelspec
+	python3 -m ipykernel.kernelspec
 
 # Set Default Jupyter kernel to Python 3
 RUN python3 -m pip install ipykernel
@@ -144,7 +140,6 @@ RUN python3 -m ipykernel install --user
 
 # Install TensorFlow
 RUN pip3 install tensorflow
-
 
 # Install dependencies for Caffe
 RUN apt-get update && apt-get install -y \
@@ -197,11 +192,13 @@ RUN pip3 --no-cache-dir install git+git://github.com/fchollet/keras.git@${KERAS_
 
 
 # Install Lasagne
-RUN pip3 --no-cache-dir install git+git://github.com/Lasagne/Lasagne.git@${LASAGNE_VERSION}
+RUN pip3 install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
+
 
 # Install Torch
 RUN git clone https://github.com/torch/distro.git ~/torch --recursive && \
 	cd ~/torch && \
+	export TORCH_NVCC_FLAGS="-D__CUDA_NO_HALF_OPERATORS__" && \
 	bash install-deps && \
 	yes no | ./install.sh
 
@@ -237,7 +234,7 @@ RUN pip3 install --upgrade tensorflow
 RUN pip3 install pydotplus
 RUN pip3 install graphviz
 RUN pip3 install sklearn
-
+RUN pip3 install python-dateutil --upgrade
 
 # Set up notebook config
 COPY jupyter_notebook_config.py /root/.jupyter/
