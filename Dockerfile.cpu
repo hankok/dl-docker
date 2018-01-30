@@ -141,18 +141,6 @@ RUN python3 -m ipykernel install --user
 # Install TensorFlow
 RUN pip3 install tensorflow
 
-# Install Caffe
-RUN apt-get update && sudo apt build-dep caffe-cpu -y && sudo apt-get install caffe-cpu -y
-
-# Set up Caffe environment variables
-#ENV CAFFE_ROOT=/root/caffe
-#ENV PYCAFFE_ROOT=$CAFFE_ROOT/python
-#ENV PYTHONPATH=$PYCAFFE_ROOT:$PYTHONPATH \
-#	PATH=$CAFFE_ROOT/build/tools:$PYCAFFE_ROOT:$PATH
-
-#RUN echo "$CAFFE_ROOT/build/lib" >> /etc/ld.so.conf.d/caffe.conf && ldconfig
-
-
 # Install Theano and set up Theano config (.theanorc) OpenBLAS
 RUN pip3 --no-cache-dir install git+git://github.com/Theano/Theano.git@${THEANO_VERSION} && \
 	\
@@ -186,6 +174,48 @@ ENV LUA_PATH='/root/.luarocks/share/lua/5.1/?.lua;/root/.luarocks/share/lua/5.1/
 	LD_LIBRARY_PATH=/root/torch/install/lib:$LD_LIBRARY_PATH \
 	DYLD_LIBRARY_PATH=/root/torch/install/lib:$DYLD_LIBRARY_PATH
 ENV LUA_CPATH='/root/torch/install/lib/?.so;'$LUA_CPATH
+
+# Install Caffe
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        wget \
+        libatlas-base-dev \
+        libboost-all-dev \
+        libgflags-dev \
+        libgoogle-glog-dev \
+        libhdf5-serial-dev \
+        libleveldb-dev \
+        liblmdb-dev \
+        libopencv-dev \
+        libprotobuf-dev \
+        libsnappy-dev \
+        protobuf-compiler \
+        python-dev \
+        python-numpy \
+        python-pip \
+        python-setuptools \
+        python-scipy && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV CAFFE_ROOT=/root/caffe
+
+# FIXME: use ARG instead of ENV once DockerHub supports this
+# https://github.com/docker/hub-feedback/issues/460
+ENV CLONE_TAG=1.0
+
+RUN git clone -b ${CLONE_TAG} --depth 1 https://github.com/BVLC/caffe.git . && \
+    pip install --upgrade pip && \
+    cd python && for req in $(cat requirements.txt) pydot; do pip install $req; done && cd .. && \
+    mkdir build && cd build && \
+    cmake -DCPU_ONLY=1 .. && \
+    make -j"$(nproc)"
+
+ENV PYCAFFE_ROOT $CAFFE_ROOT/python
+ENV PYTHONPATH $PYCAFFE_ROOT:$PYTHONPATH
+ENV PATH $CAFFE_ROOT/build/tools:$PYCAFFE_ROOT:$PATH
+RUN echo "$CAFFE_ROOT/build/lib" >> /etc/ld.so.conf.d/caffe.conf && ldconfig
 
 # Install the latest versions of nn, and iTorch
 RUN luarocks install nn && \
